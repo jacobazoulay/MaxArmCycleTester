@@ -1,24 +1,22 @@
 import time
-
-import numpy as np
 from serial import Serial
 import serial.tools.list_ports
 import threading
 from datetime import datetime
-import matplotlib.pyplot as plt
-from RGB_Vals import *
+from pathlib import Path
 
 
 def find_usb_device(device_name="USB Serial Device"):
     for port in serial.tools.list_ports.comports():
         if device_name in port.description:
+            device_dict = {"USB Serial Device": "Lock",
+                            "CH340": "Robot"}
+            msg_title = f"Connected to {device_dict[device_name]}"
+            msg = f"Established connection to {device_name} using COM {port.device[3:]}."
             try:
-                device_dict = {"USB Serial Device": "Lock",
-                               "CH340": "Robot"}
-                Log.Message(f"Connected to {device_dict[device_name]}",
-                            f"Established connection to {device_name} using COM {port.device[3:]}.")
+                Log.Message(msg_title, msg)
             except NameError:
-                pass
+                print(f"{msg_title}. {msg}")
             return port.device[3:]
     raise ConnectionError(f"Could not find COM device {device_name}")
 
@@ -28,10 +26,18 @@ class RobotCommander:
         self.COMPort = find_usb_device(device_name="CH340")
         self.serial = Serial("COM" + self.COMPort, 115200, timeout=1)
         self.startUpImports()
-        self.start_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+        self.init_log_file()
 
     def startUpImports(self):
         self.runCommand(["import source.RobotTester"])
+    
+    def init_log_file(self):
+        start_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+        log_dir_path = Path(__file__).resolve().parent / "Logs"
+        log_file_name = f'cycle_test_logs_{start_time}.txt'
+        log_dir_path.mkdir(parents=True, exist_ok=True)
+
+        self.log_file_path = log_dir_path / log_file_name
 
     def presentCard(self, slot, num=1, press_dur=1500, retract_dur=2000):
         command = f"rob.presentCard({slot}, {num}, {press_dur}, {retract_dur})"
@@ -91,62 +97,12 @@ class RobotCommander:
         t.start()
 
     def writeToFile(self):
-        with open(f'cycle_test_logs_{self.start_time}.txt', 'a') as f:  # Open file in append mode
+        with open(self.log_file_path, 'a') as f:  # Open file in append mode
             for line in self.out:
                 print(line)
                 f.write(f"{line}\n")
         # Clear the output list after writing to file
         self.out.clear()
-
-
-def plotRGB(grntd_or_dec):
-    if grntd_or_dec == "g":
-        meas = granted
-        title = "Granted"
-    elif grntd_or_dec == "d":
-        meas = declined
-        title = "Declined"
-    elif grntd_or_dec == "y":
-        meas = yellow
-        title = "Yellow"
-    elif grntd_or_dec == 'l':
-        meas = lockout
-        title = "Lockout"
-    elif grntd_or_dec == 't':
-        meas = test_data
-        title = 'Test'
-    else:
-        meas = none
-        title = "No Read"
-    rs = [rgb[0] for rgb in meas]
-    gs = [rgb[1] for rgb in meas]
-    bs = [rgb[2] for rgb in meas]
-    xs = range(len(meas))
-
-    plt.plot(xs, rs, color='red', label='Red')
-    plt.plot(xs, gs, color='green', label='Green')
-    plt.plot(xs, bs, color='blue', label='Blue')
-    plt.title(f'RGB Values - {title}')
-    plt.xlabel("Measurement Number")
-    plt.ylabel("Intensity")
-    plt.legend()
-    plt.ylim((0, 1200))
-
-    plt.show()
-
-    maxs = max(meas, key=lambda x: max(x))
-    if grntd_or_dec == "l":
-        maxs = meas[130]
-    print(f"({round(maxs[0] / max(maxs), 2)}, {round(maxs[1] / max(maxs), 2)}, {round(maxs[2] / max(maxs), 2)})")
-
-
-def plotRGBReads():
-    plotRGB('t')
-    plotRGB('d')
-    plotRGB('g')
-    plotRGB('l')
-    plotRGB('y')
-    plotRGB('n')
 
 
 def main():

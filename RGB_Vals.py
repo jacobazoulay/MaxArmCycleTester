@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+
+
 granted = [(124, 149, 188),
            (124, 149, 188),
            (124, 149, 188),
@@ -2221,3 +2224,60 @@ yellow = [(53, 56, 61),
           (53, 56, 61),
           (53, 56, 61)]
 
+
+def plotRGB(grntd_or_dec):
+    if grntd_or_dec == "g":
+        meas = granted
+        title = "Granted"
+    elif grntd_or_dec == "d":
+        meas = declined
+        title = "Declined"
+    elif grntd_or_dec == "y":
+        meas = yellow
+        title = "Yellow"
+    elif grntd_or_dec == 'l':
+        meas = lockout
+        title = "Lockout"
+    elif grntd_or_dec == 't':
+        meas = test_data
+        title = 'Test'
+    else:
+        meas = none
+        title = "No Read"
+    rs = [rgb[0] for rgb in meas]
+    gs = [rgb[1] for rgb in meas]
+    bs = [rgb[2] for rgb in meas]
+    xs = range(len(meas))
+
+    plt.plot(xs, rs, color='red', label='Red')
+    plt.plot(xs, gs, color='green', label='Green')
+    plt.plot(xs, bs, color='blue', label='Blue')
+    plt.title(f'RGB Values - {title}')
+    plt.xlabel("Measurement Number")
+    plt.ylabel("Intensity")
+    plt.legend()
+    plt.ylim((0, 1200))
+
+    plt.show()
+
+    maxs = max(meas, key=lambda x: max(x))
+    if grntd_or_dec == "l":
+        maxs = meas[130]
+    print(f"({round(maxs[0] / max(maxs), 2)}, {round(maxs[1] / max(maxs), 2)}, {round(maxs[2] / max(maxs), 2)})")
+
+
+def plotRGBReads():
+    plotRGB('t')
+    plotRGB('d')
+    plotRGB('g')
+    plotRGB('l')
+    plotRGB('y')
+    plotRGB('n')
+
+
+def main():
+    plotRGBReads()
+
+
+if __name__ == "__main__":
+    main()
