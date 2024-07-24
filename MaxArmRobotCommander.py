@@ -45,7 +45,7 @@ class RobotCommander:
         total_time = num * (press_dur + retract_dur + 1000) / 1000
         time.sleep(total_time)
 
-    def presentCardCycleTest(self, slot, num=1, press_dur=1500, retract_dur=2000):
+    def presentCardCycleTest(self, slot, num=1, press_dur=1500, retract_dur=1500):
         self.startThreadRead()
         command = f"rob.presentCard({slot}, {num}, {press_dur}, {retract_dur})"
         self.runCommand([command], readOut=False)
@@ -107,8 +107,13 @@ class RobotCommander:
 
 def main():
     rob = RobotCommander()
-    rob.presentCardCycleTest(slot=0, num=10)
+    while True:
+        rob.init_log_file()
+        for i in range(3):
+            rob.presentCardCycleTest(slot=i, num=5000)
+            time.sleep(3)
 
 
 if __name__ == "__main__":
     main()
+
